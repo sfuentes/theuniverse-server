@@ -3,7 +3,6 @@
 <head>
     <title></title>
     <script src="three.js"></script>
-    <script src="tquery.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 </head>
 <body>
@@ -11,195 +10,298 @@
 
 </body>
 <script>
-    // <!--
 
-    $.getJSON('http://localhost:3000/data', function(data) {
-        var mat = new THREE.ParticleBasicMaterial({vertexColors : true, size : 1.75});
 
-        var pointGeo = new THREE.Geometry();
+var stars = [];
+function rgbToHex(R,G,B) {return toHex(R)+toHex(G)+toHex(B)}
+function toHex(n) {
+    n = parseInt(n,10);
+    if (isNaN(n)) return "00";
+    n = Math.max(0,Math.min(n,255));
+    return "0123456789ABCDEF".charAt((n-n%16)/16)
+            + "0123456789ABCDEF".charAt(n%16);
+}
 
-        for (var i = 0; i < data.sys.length; i++) {
-            var system = data.sys[i][0];
+function rgb2hsv (r,g,b) {
+    var computedH = 0;
+    var computedS = 0;
+    var computedV = 0;
 
-        console.log(data.sys[i][0]);
-        pointGeo.vertices.push(new THREE.Vertex(new THREE.Vector3(system.pos.x, system.pos.y, system.pos.z)));
+    //remove spaces from input RGB values, convert to int
+    var r = parseInt( (''+r).replace(/\s/g,''),10 );
+    var g = parseInt( (''+g).replace(/\s/g,''),10 );
+    var b = parseInt( (''+b).replace(/\s/g,''),10 );
 
-        pointGeo.vertices[i].angle = Math.atan2(system.pos.z, system.pos.x);
-        pointGeo.vertices[i].radius = Math.sqrt(system.pos.x * system.pos.x + system.pos.z * system.pos.z);
-        pointGeo.vertices[i].speed = (system.pos.z / 100) * (system.pos.x / 100);
-        pointGeo.colors.push(new THREE.Color().setHSV((system.pos.x + 50) / 100, (system.pos.z + 50) / 100, (system.pos.y + 50) / 100));
+    if ( r==null || g==null || b==null ||
+            isNaN(r) || isNaN(g)|| isNaN(b) ) {
+        alert ('Please enter numeric RGB values!');
+        return;
+    }
+    if (r<0 || g<0 || b<0 || r>255 || g>255 || b>255) {
+        alert ('RGB values must be in the range 0 to 255.');
+        return;
+    }
+    r=r/255; g=g/255; b=b/255;
+    var minRGB = Math.min(r,Math.min(g,b));
+    var maxRGB = Math.max(r,Math.max(g,b));
 
+    // Black-gray-white
+    if (minRGB==maxRGB) {
+        computedV = minRGB;
+        return [0,0,computedV];
+    }
+
+    // Colors other than black-gray-white:
+    var d = (r==minRGB) ? g-b : ((b==minRGB) ? r-g : b-r);
+    var h = (r==minRGB) ? 3 : ((b==minRGB) ? 1 : 5);
+    computedH = 60*(h - d/(maxRGB - minRGB));
+    computedS = (maxRGB - minRGB)/maxRGB;
+    computedV = maxRGB;
+    return [computedH,computedS,computedV];
+}
+
+$.getJSON('http://localhost:3000/data', function (data) {
+
+    //var pointGeo = new THREE.Object3D();
+
+    for (var i = 0; i < data.sys.length; i++) {
+        var system = data.sys[i][0];
+// spheres
+
+
+        var color = system.sun.color.split(',');
+
+        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshLambertMaterial({overdraw:true, opacity : 0.5, color : new THREE.Color().setRGB(color[0],color[1],color[2])}));
+
+        sphere.position = new THREE.Vector3(system.pos.x, system.pos.y, system.pos.z);
+        //pointGeo.vertices.push();
+
+//        pointGeo.vertices[i].angle = Math.atan2(system.pos.z, system.pos.x);
+  //      pointGeo.vertices[i].radius = Math.sqrt(system.pos.x * system.pos.x + system.pos.z * system.pos.z);
+    //    pointGeo.vertices[i].speed = (system.pos.z / 100) * (system.pos.x / 100);
+      //  pointGeo.colors.push(new THREE.Color().setHSV((system.pos.x + 50) / 100, (system.pos.z + 50) / 100, (system.pos.y + 50) / 100));
+
+        sphere.starsystem = system;
+
+        scatterPlot.add(sphere);
+        stars.push(sphere);
 
     }
 
-        var points = new THREE.ParticleSystem(pointGeo, mat);
+    //var points = new THREE.ParticleSystem(pointGeo, mat);
 
-        scatterPlot.add(points);
-        renderer.render(scene, camera);
+
+    renderer.render(scene, camera);
+});
+function createTextCanvas(text, color, font, size) {
+    size = size || 24;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    var fontStr = (size + 'px ') + ('Arial');
+    ctx.font = fontStr;
+    var w = ctx.measureText(text).width;
+    var h = Math.ceil(size);
+    canvas.width = w;
+    canvas.height = h;
+    ctx.font = fontStr;
+    ctx.fillStyle = color || 'black';
+    ctx.fillText(text, 0, Math.ceil(size * 0.8));
+    return canvas;
+}
+
+function createText2D(text, color, font, size, segW, segH) {
+    var canvas = createTextCanvas(text, color, font, size);
+    var plane = new THREE.PlaneGeometry(canvas.width, canvas.height, segW, segH);
+    var tex = new THREE.Texture(canvas);
+    tex.needsUpdate = true;
+    var planeMat = new THREE.MeshBasicMaterial({
+        map : tex, color : 0xffffff, transparent : true
     });
-    function createTextCanvas(text, color, font, size) {
-        size = size || 24;
-        var canvas = document.createElement('canvas');
-        var ctx = canvas.getContext('2d');
-        var fontStr = (size + 'px ') + ('Arial');
-        ctx.font = fontStr;
-        var w = ctx.measureText(text).width;
-        var h = Math.ceil(size);
-        canvas.width = w;
-        canvas.height = h;
-        ctx.font = fontStr;
-        ctx.fillStyle = color || 'black';
-        ctx.fillText(text, 0, Math.ceil(size * 0.8));
-        return canvas;
+    var mesh = new THREE.Mesh(plane, planeMat);
+    mesh.scale.set(0.1, 0.1, 0.1);
+    mesh.doubleSided = true;
+    return mesh;
+}
+
+var renderer = new THREE.WebGLRenderer({antialias : true});
+var w = window.innerWidth;
+var h = window.innerHeight;
+renderer.setSize(w, h);
+document.body.appendChild(renderer.domElement);
+projector = new THREE.Projector();
+renderer.setClearColorHex(0xEEEEEE, 1.0);
+
+var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 10000);
+camera.position.z = 45;
+camera.position.x = 0;
+camera.position.y = 35;
+
+var pointLight =new THREE.PointLight(0xFFFFFF);
+
+// set its position
+pointLight.position.x = 10;
+pointLight.position.y = 50;
+pointLight.position.z = 20;
+
+
+
+
+var scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0xFFFFFF, 0.0035);
+scene.add(pointLight);
+
+var scatterPlot = new THREE.Object3D();
+
+scene.add(scatterPlot);
+
+
+//var effectBloom = new THREE.BloomPass( 5, 25, 4 , 256);
+//var effectScreen = new THREE.ShaderPass( THREE.ShaderExtras[ "screen" ] );
+//effectScreen.renderToScreen = true;
+//composer = new THREE.EffectComposer( renderer );
+
+//composer.addPass( effectBloom );
+//composer.addPass( effectScreen );
+
+scatterPlot.rotation.y = 0.5;
+
+function v(x, y, z) {
+    return new THREE.Vector3(x, y, z);
+}
+scene.position = (v(8, 8, 8));
+var lineGeo = new THREE.Geometry();
+
+lineGeo.vertices.push(
+        v(0, 0, 0), v(16, 0, 0),
+        v(0, 0, 0), v(0, 16, 0),
+        v(0, 0, 0), v(0, 0, 16),
+
+
+        v(0, 0, 0), v(16, 0, 0),
+        v(0, 0, 0), v(0, 16, 0),
+        v(0, 0, 0), v(0, 0, 16),
+
+        v(0, 16, 0), v(16, 16, 0),
+        v(0, 0, 0), v(16, 0, 0),
+        v(0, 16, 16), v(16, 16, 16),
+        v(0, 0, 16), v(16, 0, 16),
+
+        v(0, 0, 16), v(16, 0, 16),
+        v(0, 0, 0), v(16, 0, 0),
+        v(0, 16, 0), v(16, 16, 0),
+        v(0, 0, 0), v(16, 0, 0),
+
+        v(16, 0, 0), v(16, 16, 0),
+        v(0, 0, 0), v(0, 16, 0),
+        v(16, 0, 16), v(16, 16, 16),
+        v(0, 0, 16), v(0, 16, 16),
+
+        v(0, 0, 16), v(0, 16, 16),
+        v(0, 0, 0), v(0, 16, 0),
+        v(16, 0, 0), v(16, 16, 0),
+        v(0, 0, 0), v(0, 16, 0),
+
+        v(16, 16, 0), v(16, 16, 16),
+        v(16, 0, 0), v(16, 0, 16),
+        v(0, 16, 0), v(0, 16, 16),
+        v(0, 0, 0), v(0, 0, 16),
+
+        v(0, 0, 0), v(0, 0, 16),
+        v(16, 0, 0), v(16, 0, 16),
+        v(0, 16, 0), v(0, 16, 16),
+        v(0, 0, 0), v(0, 0, 16)
+);
+var lineMat = new THREE.LineBasicMaterial({color : 0x808080, lineWidth : 1});
+var line = new THREE.Line(lineGeo, lineMat);
+line.type = THREE.Lines;
+scatterPlot.add(line);
+
+var titleX = createText2D('0');
+titleX.position.z = 16;
+scatterPlot.add(titleX);
+
+
+var paused = false;
+var last = new Date().getTime();
+var down = false;
+var sx = 0, sy = 0;
+window.onmousedown = function (ev) {
+    down = true;
+    sx = ev.clientX;
+    sy = ev.clientY;
+};
+window.onmouseup = function () {
+    down = false;
+};
+window.onmousemove = function (ev) {
+    if (down) {
+        var dx = ev.clientX - sx;
+        var dy = ev.clientY - sy;
+        scatterPlot.rotation.y += dx * 0.01;
+        camera.position.y += dy;
+        sx += dx;
+        sy += dy;
     }
-
-    function createText2D(text, color, font, size, segW, segH) {
-        var canvas = createTextCanvas(text, color, font, size);
-        var plane = new THREE.PlaneGeometry(canvas.width, canvas.height, segW, segH);
-        var tex = new THREE.Texture(canvas);
-        tex.needsUpdate = true;
-        var planeMat = new THREE.MeshBasicMaterial({
-            map : tex, color : 0xffffff, transparent : true
-        });
-        var mesh = new THREE.Mesh(plane, planeMat);
-        mesh.scale.set(0.1, 0.1, 0.1);
-        mesh.doubleSided = true;
-        return mesh;
-    }
-
-    var renderer = new THREE.WebGLRenderer({antialias : true});
-    var w = window.innerWidth;
-    var h = window.innerHeight;
-    renderer.setSize(w, h);
-    document.body.appendChild(renderer.domElement);
-
-    renderer.setClearColorHex(0xEEEEEE, 1.0);
-
-    var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 10000);
-    camera.position.z = 45;
-    camera.position.x = 0;
-    camera.position.y = 35;
-
-    var scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xFFFFFF, 0.0035);
-
-    var scatterPlot = new THREE.Object3D();
-
-    scene.add(scatterPlot);
-
-    scatterPlot.rotation.y = 0.5;
-
-    function v(x, y, z) {
-        return new THREE.Vertex(new THREE.Vector3(x, y, z));
-    }
-
-    var lineGeo = new THREE.Geometry();
-
-    lineGeo.vertices.push(
-            v(0, 0, 0), v(16, 0, 0),
-            v(0, 0, 0), v(0, 16, 0),
-            v(0, 0, 0), v(0, 0, 16),
-
-
-
-            v(0, 0, 0), v(16, 0, 0),
-            v(0, 0, 0), v(0, 16, 0),
-            v(0, 0, 0), v(0, 0, 16),
-
-            v(0, 16, 0), v(16, 16, 0),
-            v(0, 0, 0), v(16, 0, 0),
-            v(0, 16, 16), v(16, 16, 16),
-            v(0, 0, 16), v(16, 0, 16),
-
-            v(0, 0, 16), v(16, 0, 16),
-            v(0, 0, 0), v(16, 0, 0),
-            v(0, 16, 0), v(16, 16, 0),
-            v(0, 0, 0), v(16, 0, 0),
-
-            v(16, 0, 0), v(16, 16, 0),
-            v(0, 0, 0), v(0, 16, 0),
-            v(16, 0, 16), v(16, 16, 16),
-            v(0, 0, 16), v(0, 16, 16),
-
-            v(0, 0, 16), v(0, 16, 16),
-            v(0, 0, 0), v(0, 16, 0),
-            v(16, 0, 0), v(16, 16, 0),
-            v(0, 0, 0), v(0, 16, 0),
-
-            v(16, 16, 0), v(16, 16, 16),
-            v(16, 0, 0), v(16, 0, 16),
-            v(0, 16, 0), v(0, 16, 16),
-            v(0, 0, 0), v(0, 0, 16),
-
-            v(0, 0, 0), v(0, 0, 16),
-            v(16, 0, 0), v(16, 0, 16),
-            v(0, 16, 0), v(0, 16, 16),
-            v(0, 0, 0), v(0, 0, 16)
-    );
-    var lineMat = new THREE.LineBasicMaterial({color : 0x808080, lineWidth : 1});
-    var line = new THREE.Line(lineGeo, lineMat);
-    line.type = THREE.Lines;
-    scatterPlot.add(line);
-
-    var titleX = createText2D('0');
-    titleX.position.z = 16;
-    scatterPlot.add(titleX);
-
-
-
-
-
-    var paused = false;
-    var last = new Date().getTime();
-    var down = false;
-    var sx = 0, sy = 0;
-    window.onmousedown = function (ev) {
-        down = true;
-        sx = ev.clientX;
-        sy = ev.clientY;
-    };
-    window.onmouseup = function () {
-        down = false;
-    };
-    window.onmousemove = function (ev) {
-        if (down) {
-            var dx = ev.clientX - sx;
-            var dy = ev.clientY - sy;
-            scatterPlot.rotation.y += dx * 0.01;
-            camera.position.y += dy;
-            sx += dx;
-            sy += dy;
-        }
-    }
-    var animating = false;
-    window.ondblclick = function () {
-        animating = !animating;
-    };
-    function animate(t) {
-        if (!paused) {
-            last = t;
-            if (animating) {
-                var v = pointGeo.vertices;
-                for (var i = 0; i < v.length; i++) {
-                    var u = v[i];
-                    u.angle += u.speed * 0.01;
-                    u.position.x = Math.cos(u.angle) * u.radius;
-                    u.position.z = Math.sin(u.angle) * u.radius;
-                }
-                pointGeo.__dirtyVertices = true;
+}
+var animating = false;
+window.ondblclick = function () {
+    animating = !animating;
+};
+function animate(t) {
+    if (!paused) {
+        last = t;
+        if (animating) {
+            var v = pointGeo.vertices;
+            for (var i = 0; i < v.length; i++) {
+                var u = v[i];
+                u.angle += u.speed * 0.01;
+                u.position.x = Math.cos(u.angle) * u.radius;
+                u.position.z = Math.sin(u.angle) * u.radius;
             }
-            renderer.clear();
-            camera.lookAt(scene.position);
-            renderer.render(scene, camera);
+            pointGeo.__dirtyVertices = true;
         }
-        window.requestAnimationFrame(animate, renderer.domElement);
+        renderer.clear();
+        camera.lookAt(scene.position);
+        renderer.render(scene, camera);
     }
-    ;
-    animate(new Date().getTime());
-    onmessage = function (ev) {
-        paused = (ev.data == 'pause');
-    };
-    //-->
+    window.requestAnimationFrame(animate, renderer.domElement);
+}
+;
+animate(new Date().getTime());
+onmessage = function (ev) {
+    paused = (ev.data == 'pause');
+};
+document.addEventListener('mousedown', onDocumentMouseDown, false);
+function onDocumentMouseDown(event) {
+
+    event.preventDefault();
+
+    var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+    projector.unprojectVector(vector, camera);
+
+    var ray = new THREE.Ray(camera.position, vector.subSelf(camera.position).normalize());
+
+    var intersects = ray.intersectObjects(stars);
+
+    if (intersects.length > 0) {
+        // First one only
+        console.log(intersects[0]);
+
+        //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
+
+        scatterPlot.remove(window.systemname);
+
+        window.systemname = createText2D('Name :'+ intersects[0].object.starsystem.name,null,null,16);
+        window.systemname.position.z = -1;
+        window.systemname.position.y = 18;
+        window.systemname.position.x = 8;
+        scatterPlot.add(window.systemname);
+
+
+    }
+
+}
+
 
 </script>
-</html>
+</html>                                                                                                            
