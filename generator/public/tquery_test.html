@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="tquery.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+    $.getJSON('http://localhost:3000/data', function (data) {
+    });
+
+    var world = tQuery.createWorld().boilerplate({cameraControls : false}).start();
+    world.tCamera().position.set(70, 40, 70);
+    world.tCamera().lookAt(world.tScene().position);
+    world.tRenderer().shadowMapEnabled = true;
+    world.tRenderer().shadowMapSoft = true;
+    world.tRenderer().setClearColorHex(0xffffff, 1);
+
+    tQuery.createDirectionalLight().addTo(world)
+            .position(20, 40, -15).color(0xffffff)
+            .castShadow(true).shadowMap(512 * 2, 512 * 2)
+            .shadowCamera(60, -60, 60, -60, 20, 200)
+            .shadowDarkness(0.7).shadowBias(.002);
+
+    var ground = tQuery.createCube(100, 100, 100).addTo(world)
+            .position(0, -10, 0)
+            .setLambertMaterial().map(texture).back()
+            .receiveShadow(true);
+
+    var spawnObject = function(){
+        var object  = tQuery.createSphere(4,4,4).addTo(world)
+                .rotation(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2)
+                .position(Math.random()*15-7.5, 25, Math.random()*15-7.5)
+                .setLambertMaterial().map().back()
+                .castShadow(true);
+        tQuery.cre
+    };
+
+</script>
+</body>
+</html>
