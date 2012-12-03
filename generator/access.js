@@ -31,19 +31,23 @@ var systemSchema = mongoose.Schema({
 
 var regionsModel = db.model('regions', regionsSchema);
 var systemModel = db.model('systems', systemSchema);
-var systems = [];
 
-regionsModel.find({ pos : { x : 2, y : 2 }}, function (err, region) {
-    console.log(region.pos);
-    region[0].region.layout.forEach(function (systemid) {
-        systemModel.find({_id : systemid}, function (err, system) {
-            systems.push(system);
-        });
-    });
-});
+
+var systems = [];
 app.get('/data', function (req, res) {
 
-    res.send(JSON.stringify({ sys : systems}));
+    var region = req.param('region');
+
+    regionsModel.find({ pos : {x : parseInt(region.x,10), y: parseInt(region.y,10)}}, function (err, region) {
+        //.forEach(function (systemid) {
+            systemModel.find({region : region[0]._id}, function (err,system ) {
+                console.log(system)
+                res.send(JSON.stringify({sys : system}));
+            });
+        //});
+    });
+
+
 });
 
 app.use(express.static(__dirname + '/public'));

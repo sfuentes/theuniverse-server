@@ -13,73 +13,77 @@
 
 
 var stars = [];
-function rgbToHex(R,G,B) {return toHex(R)+toHex(G)+toHex(B)}
+function rgbToHex(R, G, B) {
+    return toHex(R) + toHex(G) + toHex(B)
+}
 function toHex(n) {
-    n = parseInt(n,10);
+    n = parseInt(n, 10);
     if (isNaN(n)) return "00";
-    n = Math.max(0,Math.min(n,255));
-    return "0123456789ABCDEF".charAt((n-n%16)/16)
-            + "0123456789ABCDEF".charAt(n%16);
+    n = Math.max(0, Math.min(n, 255));
+    return "0123456789ABCDEF".charAt((n - n % 16) / 16)
+            + "0123456789ABCDEF".charAt(n % 16);
 }
 
-function rgb2hsv (r,g,b) {
+function rgb2hsv(r, g, b) {
     var computedH = 0;
     var computedS = 0;
     var computedV = 0;
 
     //remove spaces from input RGB values, convert to int
-    var r = parseInt( (''+r).replace(/\s/g,''),10 );
-    var g = parseInt( (''+g).replace(/\s/g,''),10 );
-    var b = parseInt( (''+b).replace(/\s/g,''),10 );
+    var r = parseInt(('' + r).replace(/\s/g, ''), 10);
+    var g = parseInt(('' + g).replace(/\s/g, ''), 10);
+    var b = parseInt(('' + b).replace(/\s/g, ''), 10);
 
-    if ( r==null || g==null || b==null ||
-            isNaN(r) || isNaN(g)|| isNaN(b) ) {
-        alert ('Please enter numeric RGB values!');
+    if (r == null || g == null || b == null ||
+            isNaN(r) || isNaN(g) || isNaN(b)) {
+        alert('Please enter numeric RGB values!');
         return;
     }
-    if (r<0 || g<0 || b<0 || r>255 || g>255 || b>255) {
-        alert ('RGB values must be in the range 0 to 255.');
+    if (r < 0 || g < 0 || b < 0 || r > 255 || g > 255 || b > 255) {
+        alert('RGB values must be in the range 0 to 255.');
         return;
     }
-    r=r/255; g=g/255; b=b/255;
-    var minRGB = Math.min(r,Math.min(g,b));
-    var maxRGB = Math.max(r,Math.max(g,b));
+    r = r / 255;
+    g = g / 255;
+    b = b / 255;
+    var minRGB = Math.min(r, Math.min(g, b));
+    var maxRGB = Math.max(r, Math.max(g, b));
 
     // Black-gray-white
-    if (minRGB==maxRGB) {
+    if (minRGB == maxRGB) {
         computedV = minRGB;
-        return [0,0,computedV];
+        return [0, 0, computedV];
     }
 
     // Colors other than black-gray-white:
-    var d = (r==minRGB) ? g-b : ((b==minRGB) ? r-g : b-r);
-    var h = (r==minRGB) ? 3 : ((b==minRGB) ? 1 : 5);
-    computedH = 60*(h - d/(maxRGB - minRGB));
-    computedS = (maxRGB - minRGB)/maxRGB;
+    var d = (r == minRGB) ? g - b : ((b == minRGB) ? r - g : b - r);
+    var h = (r == minRGB) ? 3 : ((b == minRGB) ? 1 : 5);
+    computedH = 60 * (h - d / (maxRGB - minRGB));
+    computedS = (maxRGB - minRGB) / maxRGB;
     computedV = maxRGB;
-    return [computedH,computedS,computedV];
+    return [computedH, computedS, computedV];
 }
 
-$.getJSON('http://localhost:3000/data', function (data) {
+$.getJSON('http://localhost:3000/data', { region : { x : 0, y : 0 } }, function (data) {
 
     //var pointGeo = new THREE.Object3D();
 
     for (var i = 0; i < data.sys.length; i++) {
-        var system = data.sys[i][0];
-// spheres
 
+        console.log(data.sys[i]);
+        var system = data.sys[i];
 
         var color = system.sun.color.split(',');
 
-        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshLambertMaterial({overdraw:true, opacity : 0.5, color : new THREE.Color().setRGB(color[0],color[1],color[2])}));
+        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshPhongMaterial({overdraw : true, opacity : 1, color : new THREE.Color().setRGB(color[0], color[1], color[2]), ambient : 0x030303, specular : 0x333333, shininess : 10 }));
 
         sphere.position = new THREE.Vector3(system.pos.x, system.pos.y, system.pos.z);
         //pointGeo.vertices.push();
 
 //        pointGeo.vertices[i].angle = Math.atan2(system.pos.z, system.pos.x);
-  //      pointGeo.vertices[i].radius = Math.sqrt(system.pos.x * system.pos.x + system.pos.z * system.pos.z);
-    //    pointGeo.vertices[i].speed = (system.pos.z / 100) * (system.pos.x / 100);
-      //  pointGeo.colors.push(new THREE.Color().setHSV((system.pos.x + 50) / 100, (system.pos.z + 50) / 100, (system.pos.y + 50) / 100));
+        //      pointGeo.vertices[i].radius = Math.sqrt(system.pos.x * system.pos.x + system.pos.z * system.pos.z);
+        //    pointGeo.vertices[i].speed = (system.pos.z / 100) * (system.pos.x / 100);
+        //  pointGeo.colors.push(new THREE.Color().setHSV((system.pos.x + 50) / 100, (system.pos.z + 50) / 100, (system.pos.y + 50) / 100));
 
         sphere.starsystem = system;
 
@@ -127,8 +131,11 @@ var renderer = new THREE.WebGLRenderer({antialias : true});
 var w = window.innerWidth;
 var h = window.innerHeight;
 renderer.setSize(w, h);
+
 document.body.appendChild(renderer.domElement);
+
 projector = new THREE.Projector();
+
 renderer.setClearColorHex(0xEEEEEE, 1.0);
 
 var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 10000);
@@ -136,21 +143,19 @@ camera.position.z = 45;
 camera.position.x = 0;
 camera.position.y = 35;
 
-var pointLight =new THREE.PointLight(0xFFFFFF);
+var pointLight = new THREE.AmbientLight(0x101010);
 
-// set its position
-pointLight.position.x = 10;
-pointLight.position.y = 50;
-pointLight.position.z = 20;
-
-
+directionalLight = new THREE.DirectionalLight(0xffffff);
+directionalLight.position.set(1, 1, 2).normalize();
 
 
 var scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0xFFFFFF, 0.0035);
-scene.add(pointLight);
-
+scene.fog = new THREE.FogExp2(0xFFFFFF, 0.0002);
 var scatterPlot = new THREE.Object3D();
+
+scene.add(pointLight);
+scene.add(directionalLight);
+
 
 scene.add(scatterPlot);
 
@@ -168,7 +173,7 @@ scatterPlot.rotation.y = 0.5;
 function v(x, y, z) {
     return new THREE.Vector3(x, y, z);
 }
-scene.position = (v(8, 8, 8));
+scene.position = (v(16, 16, 16));
 var lineGeo = new THREE.Geometry();
 
 lineGeo.vertices.push(
@@ -291,7 +296,7 @@ function onDocumentMouseDown(event) {
 
         scatterPlot.remove(window.systemname);
 
-        window.systemname = createText2D('Name :'+ intersects[0].object.starsystem.name,null,null,16);
+        window.systemname = createText2D('Name :' + intersects[0].object.starsystem.name, null, null, 16);
         window.systemname.position.z = -1;
         window.systemname.position.y = 18;
         window.systemname.position.x = 8;
@@ -301,7 +306,71 @@ function onDocumentMouseDown(event) {
     }
 
 }
+function getShader(gl, id) {
+    var shaderScript = document.getElementById(id);
+    if (!shaderScript) {
+        return null;
+    }
 
+    var str = "";
+    var k = shaderScript.firstChild;
+    while (k) {
+        if (k.nodeType == 3) {
+            str += k.textContent;
+        }
+        k = k.nextSibling;
+    }
+
+    var shader;
+    if (shaderScript.type == "x-shader/x-fragment") {
+        shader = gl.createShader(gl.FRAGMENT_SHADER);
+    } else if (shaderScript.type == "x-shader/x-vertex") {
+        shader = gl.createShader(gl.VERTEX_SHADER);
+    } else {
+        return null;
+    }
+
+    gl.shaderSource(shader, str);
+    gl.compileShader(shader);
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        alert(gl.getShaderInfoLog(shader));
+        return null;
+    }
+
+    return shader;
+}
 
 </script>
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+
+    uniform vec3 uColor;
+
+    void main(void) {
+    vec4 textureColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+    gl_FragColor = textureColor * vec4(uColor, 1.0);
+    }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec2 vTextureCoord;
+
+    void main(void) {
+    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+    vTextureCoord = aTextureCoord;
+    }
+</script>
+
+
 </html>                                                                                                            
