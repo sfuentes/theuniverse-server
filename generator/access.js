@@ -9,29 +9,14 @@ var db = mongoose.createConnection('localhost', 'theuniverse');
 
 var app = express();
 
-var regionsSchema = mongoose.Schema({
-    pos : { x : 'number', y : 'number'},
-    name : 'string',
-    region : {
-        layout : 'array',
-        systems : 'number',
-        coll : 'number'
-    }
-});
-var systemSchema = mongoose.Schema({
-    name : 'string',
-    pos : { x : 'number', y : 'number', z : 'number' },
-    sun : {
-        id : 'number',
-        color : "string"
-    },
-    planets : [],
-    region : 'string' // for LookUp Conv
-});
+var solarsystemtypesSchema = require('../schemas/solarsystemtypes.js');
+var solarsystemsSchema = require('../schemas/solarsystem.js');
+var regionsSchema = require('../schemas/regions.js');
+var suntypesSchema = require('../schemas/sunTypes.js');
 
 var regionsModel = db.model('regions', regionsSchema);
-var systemModel = db.model('systems', systemSchema);
-
+var systemModel  = db.model('systems', solarsystemsSchema);
+var sunModel     = db.model('startypes', suntypesSchema);
 
 var systems = [];
 app.get('/data', function (req, res) {
@@ -39,15 +24,11 @@ app.get('/data', function (req, res) {
     var region = req.param('region');
 
     regionsModel.find({ pos : {x : parseInt(region.x,10), y: parseInt(region.y,10)}}, function (err, region) {
-        //.forEach(function (systemid) {
             systemModel.find({region : region[0]._id}, function (err,system ) {
-                console.log(system)
                 res.send(JSON.stringify({sys : system}));
             });
-        //});
+
     });
-
-
 });
 
 app.use(express.static(__dirname + '/public'));

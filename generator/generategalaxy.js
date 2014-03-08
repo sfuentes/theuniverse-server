@@ -6,10 +6,10 @@
  * (8191,8191) Galaxy Regions
  * (32,32,32) Region Solarsystem Spots
  */
-var WeightedList = require('./js-weighted-list.js');
-var name = require('./getName.js');
-var mongoose = require('mongoose');
-var signals = require('signals');
+var WeightedList = require('./js-weighted-list.js'),
+    name         = require('./getName.js'),
+    mongoose     = require('mongoose'),
+    signals      = require('signals');
 
 
 // Config for now
@@ -18,9 +18,9 @@ var amountRegion = { min : 100, max : 500 }; // Range
 var sizeRegion = { x : 1, y : 31 }; // Fixed size no borderlining
 
 // Schemas
-var solarsystemtypesSchema = require('../schemas/solarsystemtypes.js');
-var solarsystemsSchema = require('../schemas/solarsystem.js');
-var regionsSchema = require('../schemas/regions.js');
+var solarsystemtypesSchema  = require('../schemas/solarsystemtypes.js');
+var solarsystemsSchema      = require('../schemas/solarsystem.js');
+var regionsSchema           = require('../schemas/regions.js');
 var suntypesSchema = require('../schemas/sunTypes.js');
 
 var planetsSchema = require('../schemas/planet.js');
@@ -132,26 +132,24 @@ Generator = {
 
             }
 
-            newsystem.region = rid;
-
             var proto = {
-                sun : {
-                    id : newsystem.sun.id,
-                    size : 500
-                },
-                pos : newsystem.pos,
+                name : newsystem.name,
+                sun  : newsystem.sun,
+                pos  : newsystem.pos,
                 solarsystem : {
-
-                }
+                    planets : [],
+                    orbits : []
+                },
+                region : rid
             }
 
-            var sys = new this.models.systems(newsystem);
-            //sconsole.log(newsystem, sys);
+            var sys = new this.models.systems(proto);
+            console.log(sys);
             sys.save(function (err) {
                 if (err) // ...
                     console.log('möööp');
             });
-            console.log(proto,newsystem,sys);
+
         }
         return { layout : systems, systems : systems.length, collisionen : coll};
     },
@@ -190,7 +188,7 @@ Generator = {
 
         _size = this.getRandomSize(_star.sizes);
 
-        return { id : _star.id, size : _size };
+        return { id : _star.id, size : _size, color : _star.color };
     },
     getSystemType : function(){
         var len = this.data.types.system.length;
@@ -228,7 +226,6 @@ Generator = {
         return orbit;
     },
     solarSystem : function () {
-        console.log('solarSystem');
 
         var starname    = this.getName(),
             star        = this.getStar() ,

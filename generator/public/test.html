@@ -70,20 +70,20 @@ $.getJSON('http://localhost:3000/data', { region : { x : 0, y : 0 } }, function 
 
     for (var i = 0; i < data.sys.length; i++) {
 
-        console.log(data.sys[i]);
+        //console.log(data.sys[i]);
         var system = data.sys[i];
 
         var color = system.sun.color.split(',');
 
-        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshPhongMaterial({overdraw : true, opacity : 1, color : new THREE.Color().setRGB(color[0], color[1], color[2]), ambient : 0x030303, specular : 0x333333, shininess : 10 }));
+        var sphere = new THREE.Mesh(new THREE.SphereGeometry((system.sun.size / 100), 32, 32), new THREE.MeshLambertMaterial({overdraw : true, opacity : 1, color : new THREE.Color().setRGB(color[0], color[1], color[2]), shading : THREE.FlatShading, overdraw : true }));
 
         sphere.position = new THREE.Vector3(system.pos.x, system.pos.y, system.pos.z);
         //pointGeo.vertices.push();
 
-//        pointGeo.vertices[i].angle = Math.atan2(system.pos.z, system.pos.x);
-        //      pointGeo.vertices[i].radius = Math.sqrt(system.pos.x * system.pos.x + system.pos.z * system.pos.z);
-        //    pointGeo.vertices[i].speed = (system.pos.z / 100) * (system.pos.x / 100);
-        //  pointGeo.colors.push(new THREE.Color().setHSV((system.pos.x + 50) / 100, (system.pos.z + 50) / 100, (system.pos.y + 50) / 100));
+        //pointGeo.vertices[i].angle = Math.atan2(system.pos.z, system.pos.x);
+        //pointGeo.vertices[i].radius = Math.sqrt(system.pos.x * system.pos.x + system.pos.z * system.pos.z);
+        //pointGeo.vertices[i].speed = (system.pos.z / 100) * (system.pos.x / 100);
+        //pointGeo.colors.push(new THREE.Color().setHSV((system.pos.x + 50) / 100, (system.pos.z + 50) / 100, (system.pos.y + 50) / 100));
 
         sphere.starsystem = system;
 
@@ -134,23 +134,26 @@ renderer.setSize(w, h);
 
 document.body.appendChild(renderer.domElement);
 
-projector = new THREE.Projector();
+var projector = new THREE.Projector();
 
-renderer.setClearColorHex(0xEEEEEE, 1.0);
 
-var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 10000);
-camera.position.z = 45;
-camera.position.x = 0;
-camera.position.y = 35;
+camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 6000);
+
+//camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -1000, 20000);
+
+camera.position.x = 2000;
+camera.position.y = 5000;
+camera.position.z = 2000;
+
 
 var pointLight = new THREE.AmbientLight(0x101010);
 
 directionalLight = new THREE.DirectionalLight(0xffffff);
-directionalLight.position.set(1, 1, 2).normalize();
+directionalLight.position.set(44, 1, 2).normalize();
 
 
 var scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0xFFFFFF, 0.0002);
+//scene.fog = new THREE.FogExp2(0xFFFFFF, 0.0002);
 var scatterPlot = new THREE.Object3D();
 
 scene.add(pointLight);
@@ -168,58 +171,52 @@ scene.add(scatterPlot);
 //composer.addPass( effectBloom );
 //composer.addPass( effectScreen );
 
-scatterPlot.rotation.y = 0.5;
+scatterPlot.rotation.y = 0.0;
 
 function v(x, y, z) {
     return new THREE.Vector3(x, y, z);
 }
-scene.position = (v(16, 16, 16));
-var lineGeo = new THREE.Geometry();
-
-lineGeo.vertices.push(
-        v(0, 0, 0), v(16, 0, 0),
-        v(0, 0, 0), v(0, 16, 0),
-        v(0, 0, 0), v(0, 0, 16),
 
 
-        v(0, 0, 0), v(16, 0, 0),
-        v(0, 0, 0), v(0, 16, 0),
-        v(0, 0, 0), v(0, 0, 16),
+var geometry = new THREE.Geometry();
 
-        v(0, 16, 0), v(16, 16, 0),
-        v(0, 0, 0), v(16, 0, 0),
-        v(0, 16, 16), v(16, 16, 16),
-        v(0, 0, 16), v(16, 0, 16),
+size = 6400;
+step = 1280;
 
-        v(0, 0, 16), v(16, 0, 16),
-        v(0, 0, 0), v(16, 0, 0),
-        v(0, 16, 0), v(16, 16, 0),
-        v(0, 0, 0), v(16, 0, 0),
+for (var i = -size; i <= size; i += step) {
 
-        v(16, 0, 0), v(16, 16, 0),
-        v(0, 0, 0), v(0, 16, 0),
-        v(16, 0, 16), v(16, 16, 16),
-        v(0, 0, 16), v(0, 16, 16),
+    geometry.vertices.push(new THREE.Vector3(-size, 0, i));
+    geometry.vertices.push(new THREE.Vector3(size, 0, i));
 
-        v(0, 0, 16), v(0, 16, 16),
-        v(0, 0, 0), v(0, 16, 0),
-        v(16, 0, 0), v(16, 16, 0),
-        v(0, 0, 0), v(0, 16, 0),
+    geometry.vertices.push(new THREE.Vector3(i, 0, -size));
+    geometry.vertices.push(new THREE.Vector3(i, 0, size));
 
-        v(16, 16, 0), v(16, 16, 16),
-        v(16, 0, 0), v(16, 0, 16),
-        v(0, 16, 0), v(0, 16, 16),
-        v(0, 0, 0), v(0, 0, 16),
+}
 
-        v(0, 0, 0), v(0, 0, 16),
-        v(16, 0, 0), v(16, 0, 16),
-        v(0, 16, 0), v(0, 16, 16),
-        v(0, 0, 0), v(0, 0, 16)
-);
-var lineMat = new THREE.LineBasicMaterial({color : 0x808080, lineWidth : 1});
-var line = new THREE.Line(lineGeo, lineMat);
-line.type = THREE.Lines;
+var material = new THREE.LineBasicMaterial({ color : 0x000000, opacity : 0.5 });
+var line = new THREE.Line(geometry, material);
+line.type = THREE.LinePieces;
+
 scatterPlot.add(line);
+
+
+var material = new THREE.MeshLambertMaterial({ color : 0xffffff, shading : THREE.FlatShading, overdraw : true });
+
+materials = [
+    new THREE.MeshLambertMaterial({ color : 0xffffff, ambient : 0xbbbbbb, shading : THREE.FlatShading, overdraw : true }),
+    new THREE.MeshBasicMaterial({ color : 0xffffff, wireframe : true, transparent : true, opacity : 0.5})
+];
+
+for (var i = -size; i <= size; i += step) {
+    console.log(i, step)
+    var cube = THREE.SceneUtils.createMultiMaterialObject(new THREE.CubeGeometry(1280, 1280, 1280), materials);
+    cube.position.x = i * step;
+    cube.position.y = i * step;
+    cube.position.z = i * step;
+
+    scatterPlot.add(cube);
+}
+
 
 var titleX = createText2D('0');
 titleX.position.z = 16;
@@ -242,16 +239,13 @@ window.onmousemove = function (ev) {
     if (down) {
         var dx = ev.clientX - sx;
         var dy = ev.clientY - sy;
-        scatterPlot.rotation.y += dx * 0.01;
-        camera.position.y += dy;
+
         sx += dx;
         sy += dy;
     }
 }
 var animating = false;
-window.ondblclick = function () {
-    animating = !animating;
-};
+
 function animate(t) {
     if (!paused) {
         last = t;
@@ -263,35 +257,47 @@ function animate(t) {
                 u.position.x = Math.cos(u.angle) * u.radius;
                 u.position.z = Math.sin(u.angle) * u.radius;
             }
-            pointGeo.__dirtyVertices = true;
+            pointGeo.__dirtyVertices = false;
         }
         renderer.clear();
         camera.lookAt(scene.position);
         renderer.render(scene, camera);
     }
     window.requestAnimationFrame(animate, renderer.domElement);
-}
-;
+};
+
 animate(new Date().getTime());
+
 onmessage = function (ev) {
     paused = (ev.data == 'pause');
 };
+
 document.addEventListener('mousedown', onDocumentMouseDown, false);
+
+var mouse2D = new THREE.Vector2(0, 0);
+var mouse3D = new THREE.Vector3(0, 0, 0);
+var mouseDown2D = new THREE.Vector2(0, 0);
+
 function onDocumentMouseDown(event) {
 
     event.preventDefault();
 
-    var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
-    projector.unprojectVector(vector, camera);
+    mouse3D.x = mouse2D.x = mouseDown2D.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse3D.y = mouse2D.y = mouseDown2D.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    mouse3D.z = 0.5;
 
-    var ray = new THREE.Ray(camera.position, vector.subSelf(camera.position).normalize());
+    /** Project from camera through the mouse and create a ray */
+    projector.unprojectVector(mouse3D, camera);
 
+    var ray = new THREE.Ray(camera.position, mouse3D.subSelf(camera.position).normalize());
+    ray.precision = 0.001;
+    console.log(ray);
     var intersects = ray.intersectObjects(stars);
 
     if (intersects.length > 0) {
         // First one only
         console.log(intersects[0]);
-
+        camera.lookAt(intersects[0]);
         //intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
 
         scatterPlot.remove(window.systemname);
@@ -300,9 +306,8 @@ function onDocumentMouseDown(event) {
         window.systemname.position.z = -1;
         window.systemname.position.y = 18;
         window.systemname.position.x = 8;
+
         scatterPlot.add(window.systemname);
-
-
     }
 
 }
