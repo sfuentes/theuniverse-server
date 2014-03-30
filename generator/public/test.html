@@ -64,7 +64,7 @@ function rgb2hsv(r, g, b) {
     return [computedH, computedS, computedV];
 }
 
-$.getJSON('http://localhost:3000/data', { region : { x : 0, y : 0 } }, function (data) {
+$.getJSON('http://localhost:3000/data', { region : { x : 1, y : 1 } }, function (data) {
 
     //var pointGeo = new THREE.Object3D();
 
@@ -75,28 +75,21 @@ $.getJSON('http://localhost:3000/data', { region : { x : 0, y : 0 } }, function 
 
         var color = system.sun.color.split(',');
 
-        var sphere = new THREE.Mesh(new THREE.SphereGeometry((system.sun.size / 100), 32, 32), new THREE.MeshLambertMaterial({overdraw : true, opacity : 1, color : new THREE.Color().setRGB(color[0], color[1], color[2]), shading : THREE.FlatShading, overdraw : true }));
+        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.75, 32, 32), new THREE.MeshLambertMaterial({overdraw : true, opacity : 1, color : new THREE.Color().setRGB(color[0], color[1], color[2]), shading : THREE.FlatShading, overdraw : true }));
 
         sphere.position = new THREE.Vector3(system.pos.x, system.pos.y, system.pos.z);
-        //pointGeo.vertices.push();
-
-        //pointGeo.vertices[i].angle = Math.atan2(system.pos.z, system.pos.x);
-        //pointGeo.vertices[i].radius = Math.sqrt(system.pos.x * system.pos.x + system.pos.z * system.pos.z);
-        //pointGeo.vertices[i].speed = (system.pos.z / 100) * (system.pos.x / 100);
-        //pointGeo.colors.push(new THREE.Color().setHSV((system.pos.x + 50) / 100, (system.pos.z + 50) / 100, (system.pos.y + 50) / 100));
 
         sphere.starsystem = system;
 
         scatterPlot.add(sphere);
+
         stars.push(sphere);
 
     }
 
-    //var points = new THREE.ParticleSystem(pointGeo, mat);
-
-
     renderer.render(scene, camera);
 });
+
 function createTextCanvas(text, color, font, size) {
     size = size || 24;
     var canvas = document.createElement('canvas');
@@ -137,13 +130,13 @@ document.body.appendChild(renderer.domElement);
 var projector = new THREE.Projector();
 
 
-camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 6000);
+//camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 4000 );
 
-//camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -1000, 20000);
+camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -1000, 20000);
 
-camera.position.x = 2000;
-camera.position.y = 5000;
-camera.position.z = 2000;
+camera.position.x = 1;
+camera.position.y = 1;
+camera.position.z = 1;
 
 
 var pointLight = new THREE.AmbientLight(0x101010);
@@ -208,13 +201,14 @@ materials = [
 ];
 
 for (var i = -size; i <= size; i += step) {
+
     console.log(i, step)
     var cube = THREE.SceneUtils.createMultiMaterialObject(new THREE.CubeGeometry(1280, 1280, 1280), materials);
     cube.position.x = i * step;
     cube.position.y = i * step;
     cube.position.z = i * step;
 
-    scatterPlot.add(cube);
+   // scatterPlot.add(cube);
 }
 
 

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="three.66.js"></script>
+    <script src="FlyControls.js"></script>
+
+</head>
+<body style='margin: 0px; background-color: #000000;overflow: hidden;'>
+
+<script type="x-shader/x-vertex" id="vertexShader">
+
+varying vec3 vNormal;
+void main()
+{
+    vNormal = normalize( normalMatrix * normal );
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+}
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentShader">
+
+varying vec3 vNormal;
+void main()
+{
+	float intensity = pow( 0.7 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) ), 4.0 );
+    gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 ) * intensity;
+}
+
+</script>
+
+
+</body>
+</html>
+<script type="application/javascript">
+    var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var onRenderFcts = [];
+
+    // camera && controls
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000000);
+    camera.position.z = 250
+    camera.position.x = -1181
+
+
+
+    controls = new THREE.FlyControls(camera);
+
+    controls.movementSpeed = 500;
+    controls.domElement = renderer.domElement;
+    controls.rollSpeed = Math.PI / 5;
+    controls.autoForward = false;
+    controls.dragToLook = true
+
+    // Light
+    var light = new THREE.AmbientLight(0x888888)
+    scene.add(light)
+
+    //scene.add( light )
+
+    var light = new THREE.DirectionalLight(0xcccccc, 1)
+    light.position.set(5, 5, 5)
+    scene.add(light)
+
+
+    var parent = new THREE.Object3D();
+
+    scene.add(parent);
+
+
+    // Add planet
+    var geometry = new THREE.SphereGeometry(1, 32, 32)
+    var material = new THREE.MeshPhongMaterial()
+
+    material.map = THREE.ImageUtils.loadTexture('images/earthmap1k.jpg')
+    material.bumpMap = THREE.ImageUtils.loadTexture('images/earthbump1k.jpg')
+    material.bumpScale = 0.05
+    material.specularMap = THREE.ImageUtils.loadTexture('images/earthspec1k.jpg')
+    material.specular = new THREE.Color('gray')
+
+    var earthMesh = new THREE.Mesh(geometry, material)
+
+    earthMesh.position = { x : -1181, y : 0, z : 0}
+    earthMesh.rotateX(90);
+    scene.add(earthMesh)
+
+
+    // Sun
+    var glowmaterial = new THREE.ShaderMaterial({
+        uniforms: {  },
+        vertexShader:   document.getElementById( 'vertexShader'   ).textContent,
+        fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+
+        blending: THREE.AdditiveBlending,
+        transparent: true
+    });
+
+    var surface = new THREE.MeshPhongMaterial({ambient: 0xFFD700});
+    var star = new THREE.SphereGeometry(109, 32, 32);
+    var sun = new THREE.Mesh(star, surface);
+
+    var glow = new THREE.SphereGeometry(119, 32, 32);
+    var sunglow = new THREE.Mesh(glow, glowmaterial);
+
+
+    parent.add(sunglow);
+    parent.add(sun);
+
+
+    //////////////////////////////////////////////////////////////////////////////////
+    //		add star field							//
+    //////////////////////////////////////////////////////////////////////////////////
+
+    var urls = [
+        "images/skybox/Blue/Blue_right1.jpg",
+        "images/skybox/Blue/Blue_left2.jpg",
+        "images/skybox/Blue/Blue_top3.jpg",
+        "images/skybox/Blue/Blue_bottom4.jpg",
+        "images/skybox/Blue/Blue_front5.jpg",
+        "images/skybox/Blue/Blue_back6.jpg"
+    ];
+
+    var textureCube = THREE.ImageUtils.loadTextureCube(urls);
+    textureCube.format = THREE.RGBFormat;
+
+    var box = new THREE.Texture(textureCube.image, new THREE.CubeRefractionMapping());
+    box.format = THREE.RGBFormat;
+
+    // init the cube shadder
+    var shader = THREE.ShaderLib[ "cube" ];
+    shader.uniforms[ "tCube" ].value = textureCube;
+
+
+    var material = new THREE.ShaderMaterial({
+        fragmentShader : shader.fragmentShader,
+        vertexShader : shader.vertexShader,
+        uniforms : shader.uniforms,
+        depthWrite : false,
+        side : THREE.BackSide
+    });
+
+    // build the skybox Mesh
+    skyboxMesh = new THREE.Mesh(new THREE.BoxGeometry(1000000, 1000000, 1000000), material);
+    // add it to the scene
+    scene.add(skyboxMesh);
+
+    var stars = new THREE.Geometry();
+
+    while (stars.vertices.length < 1e4) {
+        var lat = Math.PI * Math.random() - Math.PI / 2;
+        var lon = 2 * Math.PI * Math.random();
+
+        stars.vertices.push(new THREE.Vector3(
+                        1e5 * Math.cos(lon) * Math.cos(lat),
+                        1e5 * Math.sin(lon) * Math.cos(lat),
+                        1e5 * Math.sin(lat)
+        ));
+    }
+
+    var star_stuff = new THREE.ParticleBasicMaterial({size : 500});
+    var star_system = new THREE.ParticleSystem(stars, star_stuff);
+
+    scene.add(star_system);
+
+
+    var segmentCount = 128,
+            radius = 1181,
+            geometry = new THREE.Geometry(),
+            material = new THREE.LineDashedMaterial({ color : 0xffffff, dashSize : 1, gapSize : 1 });
+
+    for (var i = 0; i <= segmentCount; i++) {
+        var theta = (i / segmentCount) * Math.PI * 2;
+        geometry.vertices.push(
+                new THREE.Vector3(
+                                Math.cos(theta) * radius,
+                                Math.sin(theta) * radius,
+                        0));
+    }
+
+    scene.add(new THREE.Line(geometry, material));
+
+
+    // Render
+    onRenderFcts.push(function () {
+        renderer.render(scene, camera);
+    })
+
+    onRenderFcts.push(function (delta, now) {
+        earthMesh.rotation.y += 1 / 32 * delta
+    });
+
+    onRenderFcts.push(function (delta, now) {
+        controls.update(delta);
+    });
+
+    // system rotation
+    onRenderFcts.push(function () {
+        parent.rotation.y += 0.01;
+    });
+
+
+    //////////////////////////////////////////////////////////////////////////////////
+    //		loop runner							//
+    //////////////////////////////////////////////////////////////////////////////////
+    var lastTimeMsec = null
+    requestAnimationFrame(function animate(nowMsec) {
+        // keep looping
+        requestAnimationFrame(animate);
+        // measure time
+        lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
+        var deltaMsec = Math.min(200, nowMsec - lastTimeMsec)
+        lastTimeMsec = nowMsec
+        // call each update function
+
+        //controls.update();
+
+        onRenderFcts.forEach(function (onRenderFct) {
+            onRenderFct(deltaMsec / 1000, nowMsec / 1000)
+        })
+    })
+
+</script>
+

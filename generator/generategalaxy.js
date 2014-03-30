@@ -21,12 +21,12 @@ var sizeRegion = { x : 1, y : 31 }; // Fixed size no borderlining
 var solarsystemtypesSchema  = require('../schemas/solarsystemtypes.js');
 var solarsystemsSchema      = require('../schemas/solarsystem.js');
 var regionsSchema           = require('../schemas/regions.js');
-var suntypesSchema = require('../schemas/sunTypes.js');
+var suntypesSchema          = require('../schemas/sunTypes.js');
 
-var planetsSchema = require('../schemas/planet.js');
-var orbitsSchema = require('../schemas/orbit.js');
+var planetsSchema           = require('../schemas/planet.js');
+var orbitsSchema            = require('../schemas/orbit.js');
 
-var planettypesSchema = require('../schemas/planettypes.js');
+var planettypesSchema       = require('../schemas/planettypes.js');
 
 
 Generator = {
@@ -40,8 +40,8 @@ Generator = {
         // Globals
         this.data = {};
         this.data.types = {
-            sun : [],
-            system : []
+            sun     : [],
+            system  : []
         }
 
         this.systemcount = 0;
@@ -267,6 +267,7 @@ Generator = {
                 });
             }
         }
+        console.log('done');
     }
 }
 
