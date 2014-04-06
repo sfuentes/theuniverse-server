@@ -134,7 +134,7 @@ renderer.shadowCameraFar = camera.far;
 renderer.shadowCameraFov = 50;
 
 renderer.shadowMapBias = 0.0039;
-renderer.shadowMapDarkness = 0.5;
+renderer.shadowMapDarkness = 0.1;
 renderer.shadowMapWidth = 1024;
 renderer.shadowMapHeight = 1024;
 
@@ -204,11 +204,14 @@ var surface = new THREE.MeshPhongMaterial({ambient : 0xFFD700});
 var star = new THREE.SphereGeometry(109, 32, 32);
 var sun = new THREE.Mesh(star, surface);
 
-var directionalLight = new THREE.DirectionalLight( 0xffffff, 100 );
+var directionalLight = new THREE.DirectionalLight( 0xF0E68C, 1 );
+
 directionalLight.position.set( 0, 0, 0 );
 directionalLight.target.position.set(1181, 0, 0);
 directionalLight.castShadow = true;
 directionalLight.shadowCameraVisible = true;
+
+
 sun.add( directionalLight );
 
 
