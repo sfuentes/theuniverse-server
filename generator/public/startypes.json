@@ -1,0 +1,110 @@
+
+{
+
+"id" : 1,
+"name" : "Y",
+"prop" : 0.5,
+"multiple" : 1,
+"color" : "51,25,0",
+"sizes" : [0.08, 0.14]
+}
+
+{
+
+"id" : 2,
+"name" : "T",
+"prop" : 0.5,
+"multiple" : 1,
+"color" : "153,0,76",
+"sizes" : [0.08, 0.14]
+}
+{
+
+"color" : "255, 102, 102",
+"id" : 3,
+"multiple" : 1,
+"name" : "L",
+"prop" : 0.25,
+"sizes" : [0.08, 0.15]
+}
+
+{
+
+"id" : 5,
+"name" : "M",
+"prop" : 0.33,
+"multiple" : 2,
+"color" : "255,69,0",
+"sizes" : [0.7, 0.8]
+}
+
+
+{
+
+"id" : 6,
+"name" : "K",
+"prop" : 0.15,
+"multiple" : 2,
+"color" : "238,232,170",
+"sizes" : [0.7, 0.96]
+}
+{
+
+"id" : 7,
+"name" : "G",
+"prop" : 0.15,
+"multiple" : 2,
+"color" : "255,215,0",
+"sizes" : [0.96, 1.15]
+}
+
+
+{
+
+"id" : 8,
+"name" : "F",
+"prop" : 0.1,
+"multiple" : 2,
+"color" : "255,255,255",
+"sizes" : [1.15, 1.4]
+}
+
+{
+
+"id" : 9,
+"name" : "A",
+"prop" : 0.08,
+"multiple" : 3,
+"color" : "135,206,250",
+"sizes" : [1.4, 1.8]
+}
+
+{
+
+"id" : 10,
+"name" : "B",
+"prop" : 0.07,
+"multiple" : 4,
+"color" : "70,130,180",
+"sizes" : [1.8, 6.6]
+}
+
+{
+
+"id" : 11,
+"name" : "O",
+"prop" : 0.05,
+"multiple" : 5,
+"color" : "65,105,225",
+"sizes" : [6.6, 10]
+}
+
+{
+
+"color" : "75,0,130",
+"id" : 4,
+"multiple" : 2,
+"name" : "Jonas Type",
+"prop" : 0.05,
+"sizes" : [10, 12]
+}

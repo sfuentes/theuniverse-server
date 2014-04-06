@@ -22,3 +22,5 @@ The only Useful thing currently is the Generator and its show me a Region WebGL 
 run node galaxy.js which creates a couple of Regions and SolarSystems
 
 then run access.js which is able to display one Region currently
+
+

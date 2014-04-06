@@ -237,7 +237,7 @@ Generator = {
 
         orbits      = this.getOrbits(systemtype);
 
-        planets     =  this.getRandomInt(0,orbits);
+        planets     = this.getRandomInt(0,orbits);
 
         system = {
             name : starname,

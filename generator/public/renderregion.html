@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="jquery.js"></script>
+    <script src="three.66.js"></script>
+    <script src="FlyControls.js"></script>
+    <style>
+        .systeminfo {
+            position: absolute;
+            background-color: transparent;
+            color: white;
+            z-index: 1000;
+        }
+
+    </style>
+
+    <script id="fragmentShader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+
+    uniform vec3 uColor;
+
+    void main(void) {
+    vec4 textureColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+    gl_FragColor = textureColor * vec4(uColor, 1.0);
+    }
+</script>
+
+    <script id="vertexShader" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec2 vTextureCoord;
+
+    void main(void) {
+    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+    vTextureCoord = aTextureCoord;
+    }
+</script>
+</head>
+<body style='margin: 0px; background-color: #000000;overflow: hidden;'>
+<div class="systeminfo">
+    <h3 class="name"></h3>
+    <span class="sunsize"></span>
+    <span class="suntype"></span>
+    <ul>
+        <li> Planets</li>
+    </ul>
+</div>
+
+
+
+
+</body>
+</html>
+<script type="application/javascript">
+
+var scatterPlot = new THREE.Object3D();
+var systems = [];
+
+$.getJSON('http://localhost:3000/data', { region : { x : 1, y : 1 } }, function (data) {
+
+    //var pointGeo = new THREE.Object3D();
+
+    for (var i = 0; i < data.sys.length; i++) {
+
+        //console.log(data.sys[i]);
+        var system = data.sys[i];
+
+        var color = system.sun.color.split(',');
+
+        console.log(system);
+        // Earth Unit Measurement
+
+        // Sun = 109 *
+        var refsize = (109 / 2);
+        var suncolor = new THREE.Color("rgb("+color[0]+","+color[1]+","+color[2]+")");
+
+        var sphere = new THREE.Mesh(new THREE.SphereGeometry((system.sun.size * refsize), 32, 32), new THREE.MeshPhongMaterial({
+            shininess : 10.0,
+            ambient : suncolor,
+            emissive : suncolor,
+            specular : 0xbbbbbb,
+            color : suncolor }));
+
+        sphere.position = new THREE.Vector3(system.pos.x * 2000, system.pos.y * 2000, system.pos.z * 2000);
+
+        sphere.starsystem = system;
+
+        sphere.callback = function () {
+
+           // var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 );
+            camera.position = this.position;
+           //camera.position.z += 5000;
+
+
+            $('.systeminfo .name').text(this.starsystem.name);
+            $('.systeminfo .sunsize').text(this.starsystem.sun.size * refsize);
+            $('.systeminfo .suntype').text(this.starsystem.sun.type + " : " + this.starsystem.sun.color);
+        }
+
+        scatterPlot.add(sphere);
+
+        systems.push(sphere);
+
+    }
+    scene.add(scatterPlot);
+    //renderer.render(scene, camera);
+});
+
+var renderer = new THREE.WebGLRenderer({ antialias : true, alpha : true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.01, 10000010);
+camera.position.z = 250
+camera.position.x = 1181;
+
+
+
+renderer.shadowMapEnabled = true;
+renderer.shadowMapSoft = true;
+
+renderer.shadowCameraNear = 3;
+renderer.shadowCameraFar = camera.far;
+renderer.shadowCameraFov = 50;
+
+renderer.shadowMapBias = 0.0039;
+renderer.shadowMapDarkness = 0.5;
+renderer.shadowMapWidth = 1024;
+renderer.shadowMapHeight = 1024;
+
+var onRenderFcts = [];
+
+// camera && controls
+
+
+
+controls = new THREE.FlyControls(camera);
+
+controls.movementSpeed = 500;
+controls.domElement = renderer.domElement;
+controls.rollSpeed = Math.PI / 5;
+controls.autoForward = false;
+controls.dragToLook = true
+
+// Light
+//var light = new THREE.AmbientLight(0x888888)
+//var ambientLight = new THREE.AmbientLight(0x000044);
+//scene.add(new THREE.AmbientLight(0x999999));
+//scene.add(ambientLight)
+
+//scene.add( light )
+/*
+areaLight1 = new THREE.AreaLight( 0xffffff, 1000 );
+areaLight1.position.set( 0, 0, 0 );
+areaLight1.rotation.set( 0, 0, 0 );
+areaLight1.width = 1000;
+areaLight1.height = 1000;
+
+scene.add( areaLight1 );
+*/
+var parent = new THREE.Object3D();
+
+scene.add(parent);
+
+
+// Add planet
+var geometry = new THREE.SphereGeometry(1, 64, 64)
+var material = new THREE.MeshPhongMaterial()
+
+material.map = THREE.ImageUtils.loadTexture('images/earthmap1k.jpg')
+material.bumpMap = THREE.ImageUtils.loadTexture('images/earthbump1k.jpg')
+material.bumpScale = 0.05
+material.specularMap = THREE.ImageUtils.loadTexture('images/earthspec1k.jpg')
+material.specular = new THREE.Color('gray')
+
+var earthMesh = new THREE.Mesh(geometry, material)
+
+earthMesh.position = { x : 1181, y : 0, z : 0}
+earthMesh.rotation.x = 4.6
+
+
+
+var material = new THREE.ShaderMaterial({
+
+    uniforms : {
+        time : { type : "f", value : 1.0 },
+        scale : { type : "f", value : 1.5 }
+    },
+    vertexShader : document.getElementById('vertexShader').textContent,
+    fragmentShader : document.getElementById('fragmentShader').textContent
+
+});
+var surface = new THREE.MeshPhongMaterial({ambient : 0xFFD700});
+var star = new THREE.SphereGeometry(109, 32, 32);
+var sun = new THREE.Mesh(star, surface);
+
+var directionalLight = new THREE.DirectionalLight( 0xffffff, 100 );
+directionalLight.position.set( 0, 0, 0 );
+directionalLight.target.position.set(1181, 0, 0);
+directionalLight.castShadow = true;
+directionalLight.shadowCameraVisible = true;
+sun.add( directionalLight );
+
+
+
+//var glow = new THREE.SphereGeometry(119, 32, 32);
+//var sunglow = new THREE.Mesh(glow, material);
+
+
+scene.add(sun);
+
+
+//////////////////////////////////////////////////////////////////////////////////
+//		add star field							//
+//////////////////////////////////////////////////////////////////////////////////
+
+var urls = [
+    "images/skybox/Blue/Blue_right1.jpg",
+    "images/skybox/Blue/Blue_left2.jpg",
+    "images/skybox/Blue/Blue_top3.jpg",
+    "images/skybox/Blue/Blue_bottom4.jpg",
+    "images/skybox/Blue/Blue_front5.jpg",
+    "images/skybox/Blue/Blue_back6.jpg"
+];
+
+var textureCube = THREE.ImageUtils.loadTextureCube(urls);
+textureCube.format = THREE.RGBFormat;
+
+var box = new THREE.Texture(textureCube.image, new THREE.CubeRefractionMapping());
+box.format = THREE.RGBFormat;
+
+// init the cube shadder
+var shader = THREE.ShaderLib[ "cube" ];
+shader.uniforms[ "tCube" ].value = textureCube;
+
+
+var material = new THREE.ShaderMaterial({
+    fragmentShader : shader.fragmentShader,
+    vertexShader : shader.vertexShader,
+    uniforms : shader.uniforms,
+    depthWrite : false,
+    side : THREE.BackSide
+});
+
+// build the skybox Mesh
+skyboxMesh = new THREE.Mesh(new THREE.BoxGeometry(10000000, 10000000, 10000000), material);
+// add it to the scene
+scene.add(skyboxMesh);
+
+
+function createClout(size) {
+    var stars = new THREE.Geometry();
+
+    while (stars.vertices.length < 1000) {
+        var lat = Math.PI * Math.random() - Math.PI / 2;
+        var lon = 2 * Math.PI * Math.random();
+
+        stars.vertices.push(new THREE.Vector3(
+                        size * Math.cos(lon) * Math.cos(lat),
+                        size * Math.sin(lon) * Math.cos(lat),
+                        size * Math.sin(lat)
+        ));
+    }
+
+    var star_stuff = new THREE.ParticleBasicMaterial({size : 5});
+    return new THREE.ParticleSystem(stars, star_stuff);
+}
+
+
+scene.add(createClout(100000));
+
+// Add Orbit
+
+function createOrbit(radius){
+    var segmentCount = 128,
+            geometry = new THREE.Geometry(),
+            material = new THREE.LineDashedMaterial({ color : 0xffffff, dashSize : 0.5, gapSize : 10 });
+
+    for (var i = 0; i <= segmentCount; i++) {
+        var theta = (i / segmentCount) * Math.PI * 2;
+        geometry.vertices.push(
+                new THREE.Vector3(
+                                Math.cos(theta) * radius,
+                                Math.sin(theta) * radius,
+                        0));
+    }
+    return  new THREE.Line(geometry, material);
+}
+
+
+var earthOrtbit = createOrbit(1181);
+
+earthOrtbit.rotateX(1.57);
+earthOrtbit.receiveShadow = true;
+earthOrtbit.add(earthMesh);
+
+sun.add(earthOrtbit);
+sun.add(createClout(10000))
+sun.add(createClout(1000))
+
+
+
+// Render
+onRenderFcts.push(function () {
+    renderer.render(scene, camera);
+});
+var time = 0;
+var speed = 1;
+
+onRenderFcts.push(function (delta, now) {
+    // Rotations
+
+    var e_angle = (1 / 32 * delta) * 0.001;
+
+    earthMesh.rotation.y -= 1 / 32 * delta
+
+    earthMesh.position =  { x: (1181 * Math.cos(e_angle)), y : (1181 * Math.sin(e_angle)), z :  0};
+});
+
+onRenderFcts.push(function (delta, now) {
+    controls.update(delta);
+});
+
+
+function createTextCanvas(text, color, font, size) {
+    size = size || 24;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    var fontStr = (size + 'px ') + ('Arial');
+    ctx.font = fontStr;
+    var w = ctx.measureText(text).width;
+    var h = Math.ceil(size);
+    canvas.width = w;
+    canvas.height = h;
+    ctx.font = fontStr;
+    ctx.fillStyle = color || 'black';
+    ctx.fillText(text, 0, Math.ceil(size * 0.8));
+    return canvas;
+}
+
+function createText2D(text, color, font, size, segW, segH) {
+    var canvas = createTextCanvas(text, color, font, size);
+    var plane = new THREE.PlaneGeometry(canvas.width, canvas.height, segW, segH);
+    var tex = new THREE.Texture(canvas);
+    tex.needsUpdate = true;
+    var planeMat = new THREE.MeshBasicMaterial({
+        map : tex, color : 0xffffff, transparent : true
+    });
+    var mesh = new THREE.Mesh(plane, planeMat);
+    mesh.scale.set(0.1, 0.1, 0.1);
+    mesh.doubleSided = true;
+    return mesh;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////
+//		loop runner							//
+//////////////////////////////////////////////////////////////////////////////////
+var lastTimeMsec = null
+requestAnimationFrame(function animate(nowMsec) {
+    // keep looping
+    requestAnimationFrame(animate);
+    // measure time
+    lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
+    var deltaMsec = Math.min(200, nowMsec - lastTimeMsec)
+    lastTimeMsec = nowMsec
+    // call each update function
+
+    //controls.update();
+
+    onRenderFcts.forEach(function (onRenderFct) {
+        onRenderFct(deltaMsec / 1000, nowMsec / 1000)
+    })
+})
+
+// projector
+projector = new THREE.Projector();
+
+// listeners
+document.addEventListener('mouseup', onDocumentMouseDown, false)
+
+// keyboard handler
+function onDocumentMouseDown(event) {
+
+    event.preventDefault();
+
+    console.log('yeajj ');
+
+    var vector = new THREE.Vector3(
+                    ( event.clientX / window.innerWidth ) * 2 - 1,
+                    -( event.clientY / window.innerHeight ) * 2 + 1,
+            0.5);
+
+    projector.unprojectVector(vector, camera);
+
+    var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+
+    var intersects = ray.intersectObjects(systems);
+
+    if (intersects.length > 0) {
+
+        intersects[0].object.callback();
+
+    }
+
+}
+</script>
+
