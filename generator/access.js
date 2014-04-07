@@ -14,7 +14,7 @@ var app = express();
 var solarsystemtypesSchema = require('../schemas/solarsystemtypes.js');
 var solarsystemsSchema = require('../schemas/solarsystem.js');
 var regionsSchema = require('../schemas/regions.js');
-var suntypesSchema = require('../schemas/sunTypes.js');
+var suntypesSchema = require('../schemas/suntypes.js');
 
 var regionsModel = db.model('regions', regionsSchema);
 var systemModel = db.model('systems', solarsystemsSchema);
