@@ -18,7 +18,7 @@
     "bugs": {
         "url": "https://github.com/sfuentes/theuniverse-server/issues"
     },
-    "homepage": "https://github.com/sfuentes/theuniverse-server"
+    "homepage": "https://github.com/sfuentes/theuniverse-server",
     "dependencies": {
         "grunt": "*",
         "grunt-cli": "*",
