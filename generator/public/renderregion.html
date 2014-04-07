@@ -145,7 +145,7 @@
 
 
 
-				gl_FragColor = vec4( vec3( color.r - n, color.g - n, color.b - n ), 1.0 );
+				gl_FragColor = vec4( vec3( color.r * n, color.g * n, color.b * n ), 1.0 );
 
 
 				// normal
@@ -433,7 +433,7 @@ earthMesh.rotation.x = 4.6
 //earthMesh.add(createAtmosphere(earthMesh));
 staruniforms = {
     time : { type : "f", value : 1.0 },
-    scale : { type : "f", value : 0.05 }
+    scale : { type : "f", value : 0.01 }
 
 }
 
@@ -623,7 +623,7 @@ onRenderFcts.push(function (delta, now) {
 // Update stars
 onRenderFcts.push(function (delta, now) {
 
-    staruniforms.time.value += 25 * delta;
+    staruniforms.time.value += 15 * delta;
 });
 
 onRenderFcts.push(function (delta, now) {
