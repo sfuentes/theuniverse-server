@@ -7,7 +7,7 @@
         "test": "test"
     },
     "scripts": {
-        "start": "node generator/access.js"
+        "start": "node ./generator/access.js"
     },
     "repository": {
         "type": "git",
