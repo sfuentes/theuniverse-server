@@ -1,21 +1,193 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title></title>
-    <script src="jquery.js"></script>
-    <script src="three.66.js"></script>
-    <script src="FlyControls.js"></script>
-    <style>
-        .systeminfo {
-            position: absolute;
-            background-color: transparent;
-            color: white;
-            z-index: 1000;
-        }
+<title></title>
+<script src="jquery.js"></script>
+<script src="three.66.js"></script>
+<script src="FlyControls.js"></script>
+<style>
+    .systeminfo {
+        position: absolute;
+        background-color: transparent;
+        color: white;
+        z-index: 1000;
+    }
 
-    </style>
+</style>
 
-    <script id="fragmentShader" type="x-shader/x-fragment">
+<script id="sunFragmentShader" type="x-shader/x-fragment">
+        	//
+			// Description : Array and textureless GLSL 3D simplex noise function.
+			//      Author : Ian McEwan, Ashima Arts.
+			//  Maintainer : ijm
+			//     Lastmod : 20110409 (stegu)
+			//     License : Copyright (C) 2011 Ashima Arts. All rights reserved.
+			//               Distributed under the MIT License. See LICENSE file.
+			//
+
+			uniform float time;
+            uniform vec3 color;
+
+			varying vec3 vTexCoord3D;
+			varying vec3 vNormal;
+			varying vec3 vViewPosition;
+
+
+			vec4 permute( vec4 x ) {
+
+				return mod( ( ( x * 34.0 ) + 1.0 ) * x, 289.0 );
+
+			}
+
+			vec4 taylorInvSqrt( vec4 r ) {
+
+				return 1.79284291400159 - 0.85373472095314 * r;
+
+			}
+
+			float snoise( vec3 v ) {
+
+				const vec2 C = vec2( 1.0 / 6.0, 1.0 / 3.0 );
+				const vec4 D = vec4( 0.0, 0.5, 1.0, 2.0 );
+
+				// First corner
+
+				vec3 i  = floor( v + dot( v, C.yyy ) );
+				vec3 x0 = v - i + dot( i, C.xxx );
+
+				// Other corners
+
+				vec3 g = step( x0.yzx, x0.xyz );
+				vec3 l = 1.0 - g;
+				vec3 i1 = min( g.xyz, l.zxy );
+				vec3 i2 = max( g.xyz, l.zxy );
+
+				//  x0 = x0 - 0. + 0.0 * C
+				vec3 x1 = x0 - i1 + 1.0 * C.xxx;
+				vec3 x2 = x0 - i2 + 2.0 * C.xxx;
+				vec3 x3 = x0 - 1. + 3.0 * C.xxx;
+
+				// Permutations
+
+				i = mod( i, 289.0 );
+				vec4 p = permute( permute( permute(
+						 i.z + vec4( 0.0, i1.z, i2.z, 1.0 ) )
+					   + i.y + vec4( 0.0, i1.y, i2.y, 1.0 ) )
+					   + i.x + vec4( 0.0, i1.x, i2.x, 1.0 ) );
+
+				// Gradients
+				// ( N*N points uniformly over a square, mapped onto an octahedron.)
+
+				float n_ = 1.0 / 7.0; // N=7
+
+				vec3 ns = n_ * D.wyz - D.xzx;
+
+				vec4 j = p - 49.0 * floor( p * ns.z *ns.z );  //  mod(p,N*N)
+
+				vec4 x_ = floor( j * ns.z );
+				vec4 y_ = floor( j - 7.0 * x_ );    // mod(j,N)
+
+				vec4 x = x_ *ns.x + ns.yyyy;
+				vec4 y = y_ *ns.x + ns.yyyy;
+				vec4 h = 1.0 - abs( x ) - abs( y );
+
+				vec4 b0 = vec4( x.xy, y.xy );
+				vec4 b1 = vec4( x.zw, y.zw );
+
+				vec4 s0 = floor( b0 ) * 2.0 + 1.0;
+				vec4 s1 = floor( b1 ) * 2.0 + 1.0;
+				vec4 sh = -step( h, vec4( 0.0 ) );
+
+				vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+				vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+
+				vec3 p0 = vec3( a0.xy, h.x );
+				vec3 p1 = vec3( a0.zw, h.y );
+				vec3 p2 = vec3( a1.xy, h.z );
+				vec3 p3 = vec3( a1.zw, h.w );
+
+				// Normalise gradients
+
+				vec4 norm = taylorInvSqrt( vec4( dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3) ) );
+				p0 *= norm.x;
+				p1 *= norm.y;
+				p2 *= norm.z;
+				p3 *= norm.w;
+
+				// Mix final noise value
+
+				vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3) ), 0.0 );
+				m = m * m;
+				return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),dot(p2,x2), dot(p3,x3) ) );
+
+			}
+
+			float heightMap( vec3 coord ) {
+
+				float n = abs( snoise( coord ) );
+
+				n += 0.25   * abs( snoise( coord * 2.0 ) );
+				n += 0.25   * abs( snoise( coord * 4.0 ) );
+				n += 0.125  * abs( snoise( coord * 8.0 ) );
+				n += 0.0625 * abs( snoise( coord * 16.0 ) );
+
+				return n;
+
+			}
+
+			void main( void ) {
+
+				// height
+
+				float n = heightMap( vTexCoord3D );
+
+				// color
+
+
+
+				gl_FragColor = vec4( vec3( color.r - n, color.g - n, color.b - n ), 1.0 );
+
+
+				// normal
+
+				const float e = 0.001;
+
+				float nx = heightMap( vTexCoord3D + vec3( e, 0.0, 0.0 ) );
+				float ny = heightMap( vTexCoord3D + vec3( 0.0, e, 0.0 ) );
+				float nz = heightMap( vTexCoord3D + vec3( 0.0, 0.0, e ) );
+
+				vec3 normal = normalize( vNormal + 0.05 * vec3( n - nx, n - ny, n - nz ) / e );
+
+				// diffuse light
+
+				vec3 vLightWeighting = vec3( 0.1 );
+
+				vec4 lDirection = viewMatrix * vec4( normalize( vec3( 1.0, 0.0, 0.5 ) ), 0.0 );
+				float directionalLightWeighting = dot( normal, normalize( lDirection.xyz ) ) * 0.25 + 0.75;
+				vLightWeighting += vec3( 1.0 ) * directionalLightWeighting;
+
+				// specular light
+
+				vec3 dirHalfVector = normalize( lDirection.xyz + normalize( vViewPosition ) );
+
+				float dirDotNormalHalf = dot( normal, dirHalfVector );
+
+				float dirSpecularWeight = 0.0;
+				if ( dirDotNormalHalf >= 0.0 )
+					dirSpecularWeight = ( 1.0 - n ) * pow( dirDotNormalHalf, 5.0 );
+
+				vLightWeighting += vec3( 1.0, 0.5, 0.0 ) * dirSpecularWeight * n * 2.0;
+
+				gl_FragColor *= vec4( vLightWeighting, 2.0 );
+
+			}
+
+
+
+
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
     precision mediump float;
 
     varying vec2 vTextureCoord;
@@ -26,23 +198,46 @@
 
     void main(void) {
     vec4 textureColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
-    gl_FragColor = textureColor * vec4(uColor, 1.0);
+        gl_FragColor = textureColor * vec4(uColor, 1.0);
     }
+
+
+
+
+
+
 </script>
 
-    <script id="vertexShader" type="x-shader/x-vertex">
-    attribute vec3 aVertexPosition;
-    attribute vec2 aTextureCoord;
+<script id="sunVertexShader" type="x-shader/x-vertex">
 
-    uniform mat4 uMVMatrix;
-    uniform mat4 uPMatrix;
+			uniform float time;
+			uniform float scale;
+            uniform vec3 color;
 
-    varying vec2 vTextureCoord;
+			varying vec3 vTexCoord3D;
+			varying vec3 vNormal;
+			varying vec3 vViewPosition;
+            varying vec3 vColor;
 
-    void main(void) {
-    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-    vTextureCoord = aTextureCoord;
-    }
+			void main( void ) {
+
+				vec4 mPosition = modelMatrix * vec4( position, 1.0 );
+				vNormal = normalize( normalMatrix * normal );
+				vViewPosition = cameraPosition - mPosition.xyz;
+
+				vTexCoord3D = scale * ( position.xyz + vec3( 0.0, 0.0, -time ) );
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+			}
+
+
+
+
+
+</script>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+
 </script>
 </head>
 <body style='margin: 0px; background-color: #000000;overflow: hidden;'>
@@ -56,11 +251,59 @@
 </div>
 
 
-
-
 </body>
 </html>
 <script type="application/javascript">
+var customshaders = {
+    'earth' : {
+        uniforms : {
+            'texture' : { type : 't', value : 0, texture : null }
+        },
+        vertexShader : [
+            'varying vec3 vNormal;',
+            'varying vec2 vUv;',
+            'void main() {',
+            'vUv = uv;',
+            'gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+            'vNormal = normalize( normalMatrix * normal );',
+            '}'
+        ].join('\n'),
+        fragmentShader : [
+            'uniform sampler2D texture;',
+            'varying vec3 vNormal;',
+            'varying vec2 vUv;',
+            'void main() {',
+            'vec3 diffuse = texture2D( texture, vUv ).xyz;',
+            'float intensity = 1.05 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) );',
+            'vec3 atmosphere = vec3( 1.0, 1.0, 1.0 ) * pow( intensity, 3.0 );',
+            'gl_FragColor = vec4( diffuse + atmosphere, 1.0 );',
+            'gl_FragColor = vec4(vUv,0.,1.);',
+            '}'
+        ].join('\n')
+    },
+    star : {
+        uniforms : {},
+        vertexShader : [],
+        fragmentShader : []
+    },
+    'atmosphere' : {
+        uniforms : {},
+        vertexShader : [
+            'varying vec3 vNormal;',
+            'void main() {',
+            'vNormal = normalize( normalMatrix * normal );',
+            'gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+            '}'
+        ].join('\n'),
+        fragmentShader : [
+            'varying vec3 vNormal;',
+            'void main() {',
+            'float intensity = pow( 0.8 - dot( vNormal, vec3( 0, 0, 1.0 ) ), 12.0 );',
+            'gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 ) * intensity;',
+            '}'
+        ].join('\n')
+    }
+};
 
 var scatterPlot = new THREE.Object3D();
 var systems = [];
@@ -74,49 +317,70 @@ $.getJSON('http://localhost:3000/data', { region : { x : 1, y : 1 } }, function 
         //console.log(data.sys[i]);
         var system = data.sys[i];
 
-        var color = system.sun.color.split(',');
 
         console.log(system);
         // Earth Unit Measurement
 
         // Sun = 109 *
-        var refsize = (109 / 2);
-        var suncolor = new THREE.Color("rgb("+color[0]+","+color[1]+","+color[2]+")");
-
-        var sphere = new THREE.Mesh(new THREE.SphereGeometry((system.sun.size * refsize), 32, 32), new THREE.MeshPhongMaterial({
-            shininess : 10.0,
-            ambient : suncolor,
-            emissive : suncolor,
-            specular : 0xbbbbbb,
-            color : suncolor }));
-
-        sphere.position = new THREE.Vector3(system.pos.x * 2000, system.pos.y * 2000, system.pos.z * 2000);
-
-        sphere.starsystem = system;
-
-        sphere.callback = function () {
-
-           // var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 );
-            camera.position = this.position;
-           //camera.position.z += 5000;
 
 
-            $('.systeminfo .name').text(this.starsystem.name);
-            $('.systeminfo .sunsize').text(this.starsystem.sun.size * refsize);
-            $('.systeminfo .suntype').text(this.starsystem.sun.type + " : " + this.starsystem.sun.color);
-        }
+        var star = createStar(system);
 
-        scatterPlot.add(sphere);
+        scatterPlot.add(star);
 
-        systems.push(sphere);
+        systems.push(star);
 
     }
     scene.add(scatterPlot);
     //renderer.render(scene, camera);
 });
 
+
+var createStar = function (system) {
+    var color = system.sun.color.split(',');
+    var refsize = (109 / 2);
+    var suncolor = new THREE.Color("rgb(" + color[0] + "," + color[1] + "," + color[2] + ")");
+
+    /*
+     var material = new THREE.MeshPhongMaterial({
+     shininess : 1.0,
+     ambient : suncolor,
+     emissive : suncolor,
+     specular : suncolor,
+     color : suncolor });
+     */
+
+    material = getStarMaterial(suncolor);
+
+    var sphere = new THREE.Mesh(
+            new THREE.SphereGeometry((system.sun.size * refsize), 32, 32),
+            material
+    );
+
+    sphere.position = new THREE.Vector3(system.pos.x * 2000, system.pos.y * 2000, system.pos.z * 2000);
+
+    sphere.starsystem = system;
+
+    sphere.callback = function () {
+
+        // var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 );
+        //camera.position = this.position;
+        //camera.position.z += 5000;
+
+
+        $('.systeminfo .name').text(this.starsystem.name);
+        $('.systeminfo .sunsize').text(this.starsystem.sun.size * refsize);
+        $('.systeminfo .suntype').text(this.starsystem.sun.type + " : " + this.starsystem.sun.color);
+    }
+
+    return sphere;
+}
+
 var renderer = new THREE.WebGLRenderer({ antialias : true, alpha : true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0xffffff);
+
+
 document.body.appendChild(renderer.domElement);
 
 var scene = new THREE.Scene();
@@ -125,9 +389,8 @@ camera.position.z = 250
 camera.position.x = 1181;
 
 
-
 renderer.shadowMapEnabled = true;
-renderer.shadowMapSoft = true;
+renderer.shadowMapSoft = false;
 
 renderer.shadowCameraNear = 3;
 renderer.shadowCameraFar = camera.far;
@@ -143,7 +406,6 @@ var onRenderFcts = [];
 // camera && controls
 
 
-
 controls = new THREE.FlyControls(camera);
 
 controls.movementSpeed = 500;
@@ -152,26 +414,6 @@ controls.rollSpeed = Math.PI / 5;
 controls.autoForward = false;
 controls.dragToLook = true
 
-// Light
-//var light = new THREE.AmbientLight(0x888888)
-//var ambientLight = new THREE.AmbientLight(0x000044);
-//scene.add(new THREE.AmbientLight(0x999999));
-//scene.add(ambientLight)
-
-//scene.add( light )
-/*
-areaLight1 = new THREE.AreaLight( 0xffffff, 1000 );
-areaLight1.position.set( 0, 0, 0 );
-areaLight1.rotation.set( 0, 0, 0 );
-areaLight1.width = 1000;
-areaLight1.height = 1000;
-
-scene.add( areaLight1 );
-*/
-var parent = new THREE.Object3D();
-
-scene.add(parent);
-
 
 // Add planet
 var geometry = new THREE.SphereGeometry(1, 64, 64)
@@ -179,7 +421,7 @@ var material = new THREE.MeshPhongMaterial()
 
 material.map = THREE.ImageUtils.loadTexture('images/earthmap1k.jpg')
 material.bumpMap = THREE.ImageUtils.loadTexture('images/earthbump1k.jpg')
-material.bumpScale = 0.05
+material.bumpScale = 0.1
 material.specularMap = THREE.ImageUtils.loadTexture('images/earthspec1k.jpg')
 material.specular = new THREE.Color('gray')
 
@@ -188,37 +430,63 @@ var earthMesh = new THREE.Mesh(geometry, material)
 earthMesh.position = { x : 1181, y : 0, z : 0}
 earthMesh.rotation.x = 4.6
 
+//earthMesh.add(createAtmosphere(earthMesh));
+staruniforms = {
+    time : { type : "f", value : 1.0 },
+    scale : { type : "f", value : 0.05 }
 
+}
 
-var material = new THREE.ShaderMaterial({
+var getStarMaterial = function (Tcolor) {
 
-    uniforms : {
-        time : { type : "f", value : 1.0 },
-        scale : { type : "f", value : 1.5 }
-    },
-    vertexShader : document.getElementById('vertexShader').textContent,
-    fragmentShader : document.getElementById('fragmentShader').textContent
+    var shader = {
+        uniforms : {
+                color : { type : "c", value : Tcolor },
+                time : staruniforms.time,
+                scale : staruniforms.scale
+                },
+        vertexShader : document.getElementById('sunVertexShader').textContent,
+        fragmentShader : document.getElementById('sunFragmentShader').textContent
 
-});
+    };
+
+    var material = new THREE.ShaderMaterial(shader);
+
+    return material;
+}
+
 var surface = new THREE.MeshPhongMaterial({ambient : 0xFFD700});
 var star = new THREE.SphereGeometry(109, 32, 32);
-var sun = new THREE.Mesh(star, surface);
-
-var directionalLight = new THREE.DirectionalLight( 0xF0E68C, 1 );
-
-directionalLight.position.set( 0, 0, 0 );
-directionalLight.target.position.set(1181, 0, 0);
-directionalLight.castShadow = true;
-directionalLight.shadowCameraVisible = true;
+var sun = new THREE.Mesh(star, getStarMaterial(new THREE.Color(0xFFD700)));
 
 
-sun.add( directionalLight );
+/*
+ var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
 
+ directionalLight.position.set(0, 0, 0);
+ directionalLight.target.position.set(1181, 0, 0);
+ directionalLight.castShadow = true;
+ directionalLight.shadowCameraVisible = true;
+
+ sun.add(directionalLight);
+ */
+
+// // create a point light
+pointLight = new THREE.PointLight(0xF8D898);
+
+// set its position
+pointLight.position.x = 0;
+pointLight.position.y = 0;
+pointLight.position.z = 0;
+pointLight.intensity = 10;
+pointLight.distance = 100000;
+
+// add to the scene
+sun.add(pointLight);
 
 
 //var glow = new THREE.SphereGeometry(119, 32, 32);
 //var sunglow = new THREE.Mesh(glow, material);
-
 
 scene.add(sun);
 
@@ -280,14 +548,42 @@ function createClout(size) {
 }
 
 
+function createAtmosphere(target) {
+
+    var shader = customshaders['atmosphere'];
+    var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+
+    material = new THREE.ShaderMaterial({
+        uniforms : uniforms,
+        vertexShader : shader.vertexShader,
+        fragmentShader : shader.fragmentShader
+    });
+
+    var scale = target.scale;
+
+    var mesh = new THREE.Mesh(target.geometry, material);
+    mesh.scale.x = scale.x + 0.2;
+    mesh.scale.y = scale.y + 0.2;
+    mesh.scale.z = scale.z + 0.2;
+
+    mesh.flipSided = true;
+    mesh.matrixAutoUpdate = false;
+    mesh.updateMatrix();
+
+    return  mesh;
+
+}
+;
+
+
 scene.add(createClout(100000));
 
 // Add Orbit
 
-function createOrbit(radius){
+function createOrbit(radius) {
     var segmentCount = 128,
             geometry = new THREE.Geometry(),
-            material = new THREE.LineDashedMaterial({ color : 0xffffff, dashSize : 0.5, gapSize : 10 });
+            material = new THREE.LineDashedMaterial({ color : 0xffffff, dashSize : 1, gapSize : 100 });
 
     for (var i = 0; i <= segmentCount; i++) {
         var theta = (i / segmentCount) * Math.PI * 2;
@@ -305,67 +601,40 @@ var earthOrtbit = createOrbit(1181);
 
 earthOrtbit.rotateX(1.57);
 earthOrtbit.receiveShadow = true;
+
 earthOrtbit.add(earthMesh);
 
 sun.add(earthOrtbit);
-sun.add(createClout(10000))
-sun.add(createClout(1000))
 
+//sun.add(createClout(10000))
 
+var time = 0;
+var speed = 1;
 
 // Render
 onRenderFcts.push(function () {
     renderer.render(scene, camera);
 });
-var time = 0;
-var speed = 1;
+
+
+onRenderFcts.push(function (delta, now) {
+    controls.update(delta);
+});
+// Update stars
+onRenderFcts.push(function (delta, now) {
+
+    staruniforms.time.value += 25 * delta;
+});
 
 onRenderFcts.push(function (delta, now) {
     // Rotations
 
     var e_angle = (1 / 32 * delta) * 0.001;
 
-    earthMesh.rotation.y -= 1 / 32 * delta
+    earthMesh.rotation.y -= 1 / 32 * delta;
 
-    earthMesh.position =  { x: (1181 * Math.cos(e_angle)), y : (1181 * Math.sin(e_angle)), z :  0};
+    earthMesh.position = { x : (earthMesh.position.x * Math.cos(e_angle)), y : (earthMesh.position.x * Math.sin(e_angle)), z : 0};
 });
-
-onRenderFcts.push(function (delta, now) {
-    controls.update(delta);
-});
-
-
-function createTextCanvas(text, color, font, size) {
-    size = size || 24;
-    var canvas = document.createElement('canvas');
-    var ctx = canvas.getContext('2d');
-    var fontStr = (size + 'px ') + ('Arial');
-    ctx.font = fontStr;
-    var w = ctx.measureText(text).width;
-    var h = Math.ceil(size);
-    canvas.width = w;
-    canvas.height = h;
-    ctx.font = fontStr;
-    ctx.fillStyle = color || 'black';
-    ctx.fillText(text, 0, Math.ceil(size * 0.8));
-    return canvas;
-}
-
-function createText2D(text, color, font, size, segW, segH) {
-    var canvas = createTextCanvas(text, color, font, size);
-    var plane = new THREE.PlaneGeometry(canvas.width, canvas.height, segW, segH);
-    var tex = new THREE.Texture(canvas);
-    tex.needsUpdate = true;
-    var planeMat = new THREE.MeshBasicMaterial({
-        map : tex, color : 0xffffff, transparent : true
-    });
-    var mesh = new THREE.Mesh(plane, planeMat);
-    mesh.scale.set(0.1, 0.1, 0.1);
-    mesh.doubleSided = true;
-    return mesh;
-}
-
-
 //////////////////////////////////////////////////////////////////////////////////
 //		loop runner							//
 //////////////////////////////////////////////////////////////////////////////////
@@ -417,5 +686,7 @@ function onDocumentMouseDown(event) {
     }
 
 }
+
+
 </script>
 
