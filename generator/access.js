@@ -5,7 +5,9 @@
  */
 var mongoose = require('mongoose');
 var express = require('express');
-var db = mongoose.createConnection('mongodb://theuniverse:ß0987654321@oceanic.mongohq.com:10020/app23625694');
+var opts = { db: { native_parser: true }, user : 'theuniverse', pass : 'abc'};
+var db = mongoose.createConnection('oceanic.mongohq.com','app23625694', 10020 ,opts);
+
 
 var app = express();
 
