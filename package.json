@@ -1,0 +1,28 @@
+{
+    "name": "server",
+    "version": "0.0.0",
+    "description": "the universer server",
+    "main": "server.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "start": "node generator/access.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sfuentes/theuniverse-server.git"
+    },
+    "author": "Sebastian Fuentes",
+    "license": "custom",
+    "bugs": {
+        "url": "https://github.com/sfuentes/theuniverse-server/issues"
+    },
+    "homepage": "https://github.com/sfuentes/theuniverse-server"
+    "dependencies": {
+        "grunt": "*",
+        "grunt-cli": "*",
+        "express": "3.3.5",
+        "mongoose": "~3.8.8"
+    }
+}

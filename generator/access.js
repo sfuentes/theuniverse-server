@@ -5,7 +5,7 @@
  */
 var mongoose = require('mongoose');
 var express = require('express');
-var db = mongoose.createConnection('localhost', 'theuniverse');
+var db = mongoose.createConnection('mongodb://theuniverse:ß0987654321@oceanic.mongohq.com:10020/app23625694');
 
 var app = express();
 
@@ -38,4 +38,4 @@ app.get('/', function (req, res) {
 
 });
 
-app.listen(3000);
+app.listen(80);
