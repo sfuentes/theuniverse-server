@@ -24,3 +24,4 @@ run node galaxy.js which creates a couple of Regions and SolarSystems
 then run access.js which is able to display one Region currently
 
 
+https://www.codeship.io/projects/854321b0-a0cc-0131-aac9-1a94f8b83340/status
