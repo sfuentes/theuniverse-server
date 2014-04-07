@@ -7,7 +7,7 @@ var mongoose = require('mongoose');
 var express = require('express');
 var opts = { user : 'theuniverse', pass : 'abc'};
 var db = mongoose.createConnection('oceanic.mongohq.com','app23625694', 10020 ,opts);
-
+var port = process.env.PORT || 3000;
 
 var app = express();
 
@@ -40,4 +40,4 @@ app.get('/', function (req, res) {
 
 });
 
-app.listen(80);
+app.listen(port);
